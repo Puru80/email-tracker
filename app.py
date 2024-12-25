@@ -17,5 +17,5 @@ def track_email(unique_id):
     return tracking_satus
 
 
-if __name__ == "__main__":
-    app.run(debug=True)
+""" if __name__ == "__main__":
+    app.run(debug=True) """
