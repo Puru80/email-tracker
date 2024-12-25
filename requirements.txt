@@ -1,2 +1,5 @@
 gunicorn
 flask
+psycopg2
+smtplib
+pandas

@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask
 from database import Database
 
 app = Flask(__name__)
