@@ -1,9 +1,13 @@
 import smtplib
 from email.mime.text import MIMEText
-from email.utils import formataddr
-import random, time, json, argparse
+from email.mime.multipart import MIMEMultipart
+from email.utils import formataddr, formatdate
+import random, time, json, argparse, uuid
 import pandas as pd
+from database import Database
 
+db = Database("config.json")
+db.create_tables()
 
 class Config:
 
@@ -16,6 +20,7 @@ class Config:
         app_password,
         smtp_server,
         cc,
+        server_url
     ):
         self.company_name = company_name
         self.contact = contact
@@ -24,28 +29,29 @@ class Config:
         self.app_password = app_password
         self.smtp_server = smtp_server
         self.cc = cc
+        self.server_url = server_url
 
         # Email content
         self.subject = "Partnership Opportunity for Bill Discounting!"
         self.body = f"""
-        Dear Sir/Madam,
-
-        Warm Greetings.
-
-        We are Conkart, a dedicated B2B and B2C marketplace catering to the construction industry. We are looking to partner with NBFCs interested in providing real-time bill discounting services for construction material transactions on our platform.
-
-        Our marketplace serves a diverse clientele, including:
-
-        Developers / Builders / Private or Government Contractor
-        One-Time Buyers (B2C) – Individuals constructing or renovating their homes. In this industry, bill discounting is typically extended for periods ranging from 7 to 60 days, and we see a significant opportunity to streamline this process for our buyers and sellers. Your participation as a financial partner would enable seamless, efficient transactions and enhance liquidity for our customers.
-
-        If you currently offer such services or are willing to explore this opportunity, we would be delighted to discuss how we can collaborate. Please reply to this email, and we can arrange a meeting to discuss further details.
-
-        Looking forward to your positive response.
-
-        Warm regards,
-        {company_name}
-        {contact}
+Dear Sir/Madam,<br>
+<br>
+Warm Greetings.<br>
+<br>
+We are Conkart, a dedicated B2B and B2C marketplace catering to the construction industry. We are looking to partner with NBFCs interested in providing real-time bill discounting services for construction material transactions on our platform.<br>
+<br>
+Our marketplace serves a diverse clientele, including:<br>
+<br>
+Developers / Builders / Private or Government Contractor<br>
+One-Time Buyers (B2C) – Individuals constructing or renovating their homes. In this industry, bill discounting is typically extended for periods ranging from 7 to 60 days, and we see a significant opportunity to streamline this process for our buyers and sellers. Your participation as a financial partner would enable seamless, efficient transactions and enhance liquidity for our customers.<br>
+<br>
+If you currently offer such services or are willing to explore this opportunity, we would be delighted to discuss how we can collaborate. Please reply to this email, and we can arrange a meeting to discuss further details.<br>
+<br>
+Looking forward to your positive response.<br>
+<br>
+Warm regards,<br>
+{company_name}<br>
+{contact}
         """
 
         # Set up the SMTP server
@@ -55,6 +61,9 @@ class Config:
 
     def quit(self):
         self.server.quit()
+
+
+email_recepients = ["puru.agar99@gmail.com"]
 
 
 def get_email_recepients():
@@ -69,60 +78,47 @@ def get_email_recepients():
 # TODO: Add id to the email body
 def send_email(recipient, config: Config):
 
-    msg = MIMEText(config.body)
+    msg = MIMEMultipart()
+
+    unique_id = str(uuid.uuid4())
+    tracking_pixel_url = f"{config.server_url}/track/{unique_id}"
+
+    email_content = f"""
+    
+<html>
+  <body>
+    <p>{config.body}</p>
+    <img src="{tracking_pixel_url}" width="1px" height="1px">
+  </body>
+</html>
+
+"""
+    msg.attach(MIMEText(email_content, "html"))
     msg["Subject"] = config.subject
     msg["From"] = formataddr((config.display_name, config.email_address))
     msg["cc"] = config.cc
     msg["To"] = recipient
+    mail_time = formatdate(timeval=None, localtime=True)
+    print("Mail time: ", mail_time)
+    msg["Date"] = mail_time
+
+    print("Sending email to: ", recipient)
 
     try:
-        config.server.sendmail(config.email_address, recipient, msg.as_string())
-    except:
+        error = config.server.sendmail(config.email_address, recipient, msg.as_string())
+        print("Error: ", error)
+
+        db.register_email(recipient, unique_id)
+    except Exception as e:
+        print(e)
         print("failed to send mail: ", recipient)
-
-""" 
-@app.route("/send_email", methods=["POST"])
-def send_email():
-    data = request.get_json()
-    recipient_email = data["recipient_email"]
-    email_subject = data["email_subject"]
-    email_body = data["email_body"]
-
-    unique_id = str(uuid.uuid4())
-    tracking_pixel_url = f"http://localhost:5000/track?id={unique_id}"
-
-    email_content = f"""
-    
-    # <html>
-    #   <body>
-    #     <p>{email_body}</p>
-    #     <img src="{tracking_pixel_url}">
-    #   </body>
-    # </html>
-    
-"""
-
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = email_subject
-    msg["From"] = email_address
-    msg["To"] = recipient_email
-    msg.attach(MIMEText(email_content, "html"))
-
-    server = smtplib.SMTP(smtp_server, smtp_port)
-    server.starttls()
-    server.login(email_address, email_password)
-    server.sendmail(email_address, recipient_email, msg.as_string())
-    server.quit()
-
-    return jsonify({"message": "Email sent successfully"})
-"""
 
 def main(config):
 
-    email_recepients = get_email_recepients()
+    # email_recepients = get_email_recepients()
 
     for recipient in email_recepients:
-        send_email(recipient)
+        send_email(recipient, config)
 
         random_time = random.randint(1, 10)
         time.sleep(random_time)
@@ -160,6 +156,7 @@ if __name__ == "__main__":
             email_params.get("email_password"),
             email_params.get("smtp_server"),
             email_params.get("cc"),
+            cfg.get("server_url"),
         )
 
         main(email_config)
