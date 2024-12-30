@@ -22,13 +22,17 @@ def track_email(unique_id):
 
     email_headers = request.headers
     print("Email headers: ", email_headers)
-    
+
     client_ip = email_headers.get("True-Client-Ip")
     print("Client IP: ", client_ip)
-    
+
+    print("ENVIRON - : HTTP_X_FORWARDED_FOR: ", request.environ.get("HTTP_X_FORWARDED_FOR"))
+    print("ENVIRON - : HTTP_X_REAL_IP: ", request.environ.get("HTTP_X_REAL_IP"))
+    print("ENVIRON - : REMOTE_ADDR: ", request.environ.get("REMOTE_ADDR"))
+
     if utils.is_ip_ignored(client_ip): 
         return "IP ignored"
-    
+
     print("Tracking email with unique_id: ", unique_id)
     tracking_satus = db.track_email(unique_id)
 
