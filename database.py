@@ -17,6 +17,10 @@ class Database:
         )
         self.cursor = self.conn.cursor()
 
+    def health_check(self):
+        self.cursor.execute("SELECT 1")
+        return "Database connection successful"
+
     def create_tables(self):
         self.cursor.execute(
             """
@@ -41,7 +45,7 @@ class Database:
             )
             self.conn.commit()
             return "Email tracked successfully"
-        
+
     def register_email(self, email_address, unique_id):
         self.cursor.execute(
             "INSERT INTO email_data (email_address, unique_id) VALUES (%s, %s)",

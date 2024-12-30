@@ -9,6 +9,7 @@ from database import Database
 db = Database("config.json")
 db.create_tables()
 
+
 class Config:
 
     def __init__(
@@ -20,7 +21,7 @@ class Config:
         app_password,
         smtp_server,
         cc,
-        server_url
+        server_url,
     ):
         self.company_name = company_name
         self.contact = contact
@@ -63,19 +64,32 @@ Warm regards,<br>
         self.server.quit()
 
 
-email_recepients = ["puru.agar99@gmail.com"]
+email_recepients = ["example@gmail.com"]
 
 
 def get_email_recepients():
     file = pd.ExcelFile(r"D:\aargo\Nbfc .xlsx")
-    df = file.parse("Sheet 24")
+    df = file.parse("Sheet 29")
 
     df.columns = ["ID", "Name", "Location", "D", "E", "F", "G", "H", "Email"]
 
-    return df["Email"].tolist()
+    list = df["Email"].tolist()
+    
+    email_recepients = []
+    
+    for str in list:
+        if str == "-NA-" or str == "" or str == "nan":
+            # print("Skipping nan: ", str)
+            continue
+        arr = str.split(";")
+        
+        for email in arr:
+            if len(email.strip()) > 0:
+                email_recepients.append(email.strip().toLowerCase())
+            
+    return email_recepients
 
 
-# TODO: Add id to the email body
 def send_email(recipient, config: Config):
 
     msg = MIMEMultipart()
@@ -96,7 +110,7 @@ def send_email(recipient, config: Config):
     msg.attach(MIMEText(email_content, "html"))
     msg["Subject"] = config.subject
     msg["From"] = formataddr((config.display_name, config.email_address))
-    msg["cc"] = config.cc
+    msg["Cc"] = config.cc
     msg["To"] = recipient
     mail_time = formatdate(timeval=None, localtime=True)
     print("Mail time: ", mail_time)
@@ -113,9 +127,12 @@ def send_email(recipient, config: Config):
         print(e)
         print("failed to send mail: ", recipient)
 
+
 def main(config):
 
     # email_recepients = get_email_recepients()
+    # print("Email recepients: ", len(email_recepients))
+    # print("Email recepients: ", email_recepients)
 
     for recipient in email_recepients:
         send_email(recipient, config)
