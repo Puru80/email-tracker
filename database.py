@@ -37,8 +37,13 @@ class Database:
 
     def track_email(self, unique_id):
         self.cursor.execute("SELECT * FROM email_data WHERE unique_id=%s", (unique_id,))
-        if self.cursor.fetchone():
+        record = self.cursor.fetchone()
+        if record is None:
+            return "Email does not exist"
+        
+        if record[4] is not None:
             return "Email already tracked"
+        
         else:
             self.cursor.execute(
                 "UPDATE email_tracking SET read_at = CURRENT_TIMESTAMP WHERE unique_id = %s",

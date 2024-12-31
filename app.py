@@ -21,8 +21,7 @@ def health():
 def track_email(unique_id):
 
     email_headers = request.headers
-    print("Email headers: ", email_headers)
-
+    
     client_ip = email_headers.get("True-Client-Ip")
     print("Client IP: ", client_ip)
 
