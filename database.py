@@ -24,24 +24,25 @@ class Database:
     def create_tables(self):
         self.cursor.execute(
             """
-            CREATE TABLE IF NOT EXISTS tracking_data
-            (id SERIAL PRIMARY KEY, unique_id TEXT UNIQUE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
-            
             CREATE TABLE IF NOT EXISTS email_data
-            (id SERIAL PRIMARY KEY, email_address TEXT, unique_id TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
+            (
+                id            SERIAL PRIMARY KEY,
+                email_address TEXT,
+                unique_id     TEXT,
+                created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
             """
         )
         self.conn.commit()
 
     def track_email(self, unique_id):
-        self.cursor.execute(
-            "SELECT * FROM tracking_data WHERE unique_id=%s", (unique_id,)
-        )
+        self.cursor.execute("SELECT * FROM email_data WHERE unique_id=%s", (unique_id,))
         if self.cursor.fetchone():
             return "Email already tracked"
         else:
             self.cursor.execute(
-                "INSERT INTO tracking_data (unique_id) VALUES (%s)", (unique_id,)
+                "UPDATE email_tracking SET read_at = CURRENT_TIMESTAMP WHERE unique_id = %s",
+                (unique_id,),
             )
             self.conn.commit()
             return "Email tracked successfully"

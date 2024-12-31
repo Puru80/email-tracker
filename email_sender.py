@@ -64,7 +64,7 @@ Warm regards,<br>
         self.server.quit()
 
 
-email_recepients = ["example@gmail.com"]
+email_recepients = ["puru.agar99@gmail.com"]
 
 
 def get_email_recepients():
