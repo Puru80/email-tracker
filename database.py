@@ -46,7 +46,7 @@ class Database:
         
         else:
             self.cursor.execute(
-                "UPDATE email_tracking SET read_at = CURRENT_TIMESTAMP WHERE unique_id = %s",
+                "UPDATE email_data SET read_at = CURRENT_TIMESTAMP WHERE unique_id = %s",
                 (unique_id,),
             )
             self.conn.commit()
