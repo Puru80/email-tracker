@@ -69,7 +69,7 @@ email_recepients = ["puru.agar99@gmail.com"]
 
 def get_email_recepients():
     file = pd.ExcelFile(r"D:\aargo\Nbfc .xlsx")
-    df = file.parse("Sheet 29")
+    df = file.parse("Sheet 7")
 
     df.columns = ["ID", "Name", "Location", "D", "E", "F", "G", "H", "Email"]
 
@@ -85,7 +85,7 @@ def get_email_recepients():
         
         for email in arr:
             if len(email.strip()) > 0:
-                email_recepients.append(email.strip().toLowerCase())
+                email_recepients.append(email.strip().lower())
             
     return email_recepients
 
@@ -130,9 +130,11 @@ def send_email(recipient, config: Config):
 
 def main(config):
 
-    # email_recepients = get_email_recepients()
-    # print("Email recepients: ", len(email_recepients))
+    email_recepients = get_email_recepients()
+    print("Email recepients: ", len(email_recepients))
     # print("Email recepients: ", email_recepients)
+
+    # return
 
     for recipient in email_recepients:
         send_email(recipient, config)

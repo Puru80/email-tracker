@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask
 from database import Database
 from utils import Utils
 
@@ -6,8 +6,6 @@ app = Flask(__name__)
 
 db = Database("config.json")
 db.create_tables()
-
-utils = Utils("config.json")
 
 
 @app.route("/health", methods=["GET"])
@@ -27,5 +25,6 @@ def track_email(unique_id):
     return tracking_satus
 
 
-if __name__ == "__main__":
+""" if __name__ == "__main__":
     app.run(debug=True)
+ """
