@@ -14,6 +14,10 @@ class Database:
             password=config["database"]["password"],
             host=config["database"]["host"],
             port=config["database"]["port"],
+            keepalives=1,
+            keepalives_idle=30,
+            keepalives_interval=10,
+            keepalives_count=5,
         )
         self.cursor = self.conn.cursor()
 
@@ -65,8 +69,15 @@ class Database:
             )
             self.conn.commit()
             return "Email registered successfully"
+        except psycopg2.InterfaceError as e:
+            print(e)
+            print("Email: ", email_address)
+            print("Unique ID: ", unique_id)
         except Exception as e:
             print(e)
             print("Email: ", email_address)
             print("Unique ID: ", unique_id)
-            return str(e)
+            
+    def close(self):
+        self.cursor.close()
+        self.conn.close()
