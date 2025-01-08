@@ -36,26 +36,37 @@ class Database:
         self.conn.commit()
 
     def track_email(self, unique_id):
-        self.cursor.execute("SELECT * FROM email_data WHERE unique_id=%s", (unique_id,))
-        record = self.cursor.fetchone()
-        if record is None:
-            return "Email does not exist"
-        
-        if record[4] is not None:
-            return "Email already tracked"
-        
-        else:
-            self.cursor.execute(
-                "UPDATE email_data SET read_at = CURRENT_TIMESTAMP WHERE unique_id = %s",
-                (unique_id,),
-            )
-            self.conn.commit()
-            return "Email tracked successfully"
+        try: 
+            self.cursor.execute("SELECT * FROM email_data WHERE unique_id=%s", (unique_id,))
+            record = self.cursor.fetchone()
+            if record is None:
+                return "Email does not exist"
+
+            if record[4] is not None:
+                return "Email already tracked"
+
+            else:
+                self.cursor.execute(
+                    "UPDATE email_data SET read_at = now() WHERE unique_id = %s",
+                    (unique_id,),
+                )
+                self.conn.commit()
+                return "Email tracked successfully"
+        except Exception as e:
+            print(e)
+            print("Unique ID: ", unique_id)
+            return str(e)
 
     def register_email(self, email_address, unique_id):
-        self.cursor.execute(
-            "INSERT INTO email_data (email_address, unique_id) VALUES (%s, %s)",
-            (email_address, unique_id),
-        )
-        self.conn.commit()
-        return "Email registered successfully"
+        try: 
+            self.cursor.execute(
+                "INSERT INTO email_data (email_address, unique_id) VALUES (%s, %s)",
+                (email_address, unique_id),
+            )
+            self.conn.commit()
+            return "Email registered successfully"
+        except Exception as e:
+            print(e)
+            print("Email: ", email_address)
+            print("Unique ID: ", unique_id)
+            return str(e)

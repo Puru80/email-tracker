@@ -24,7 +24,6 @@ def track_email(unique_id):
     print("Tracking status: ", tracking_satus)
     return tracking_satus
 
-
-""" if __name__ == "__main__":
-    app.run(debug=True)
- """
+""" 
+if __name__ == "__main__":
+    app.run(debug=True) """

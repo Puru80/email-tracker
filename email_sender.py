@@ -130,11 +130,10 @@ def send_email(recipient, config: Config):
 
 def main(config):
 
-    email_recepients = get_email_recepients()
+    # email_recepients = get_email_recepients()
     print("Email recepients: ", len(email_recepients))
     # print("Email recepients: ", email_recepients)
 
-    # return
 
     for recipient in email_recepients:
         send_email(recipient, config)
