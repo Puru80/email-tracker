@@ -22,8 +22,13 @@ class Database:
         self.cursor = self.conn.cursor()
 
     def health_check(self):
-        self.cursor.execute("SELECT 1")
-        return "Database connection successful"
+        try:
+            self.cursor.execute("SELECT 1")
+            return "Database connection successful"
+        except Exception as e:
+            print(e)
+            
+            return "Database connection failed"
 
     def create_tables(self):
         self.cursor.execute(
