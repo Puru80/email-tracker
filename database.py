@@ -25,9 +25,11 @@ class Database:
         try:
             self.cursor.execute("SELECT 1")
             return "Database connection successful"
+        except psycopg2.InterfaceError as e:
+            print(e)
         except Exception as e:
             print(e)
-            
+
             return "Database connection failed"
 
     def create_tables(self):
@@ -82,7 +84,7 @@ class Database:
             print(e)
             print("Email: ", email_address)
             print("Unique ID: ", unique_id)
-            
+
     def close(self):
         self.cursor.close()
         self.conn.close()
