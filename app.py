@@ -5,7 +5,7 @@ from utils import Utils
 app = Flask(__name__)
 
 db = Database("config.json")
-db.create_tables()
+# db.create_tables()
 
 
 @app.route("/health", methods=["GET"])

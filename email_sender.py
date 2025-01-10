@@ -64,12 +64,12 @@ Warm regards,<br>
         self.server.quit()
 
 
-email_recepients = ["puru.agar99@gmail.com"]
+email_recepients = ["nrd1111@gmail.com", "birladavid@gmail.com"]
 
 
 def get_email_recepients():
     file = pd.ExcelFile(r"D:\aargo\Nbfc .xlsx")
-    df = file.parse("Sheet 8")
+    df = file.parse("Sheet 10")
 
     df.columns = ["ID", "Name", "Location", "D", "E", "F", "G", "H", "Email"]
 
@@ -133,7 +133,7 @@ def main(config):
     email_recepients = get_email_recepients()
     print("Email recepients: ", len(email_recepients))
     # print("Email recepients: ", email_recepients)
-
+    # return
     """ final_email_recepients = []
     to_send_email = False
     for email in email_recepients:
@@ -142,9 +142,8 @@ def main(config):
             continue
 
         if to_send_email:
-            final_email_recepients.append(email)
- """
- 
+            final_email_recepients.append(email) """
+
     for recipient in email_recepients:
         send_email(recipient, config)
 
