@@ -8,18 +8,24 @@ class Database:
         with open(config_file, "r") as f:
             config = json.load(f)
 
-        self.conn = psycopg2.connect(
-            dbname=config["database"]["dbname"],
-            user=config["database"]["user"],
-            password=config["database"]["password"],
-            host=config["database"]["host"],
-            port=config["database"]["port"],
-            keepalives=1,
-            keepalives_idle=30,
-            keepalives_interval=10,
-            keepalives_count=5,
-        )
-        self.cursor = self.conn.cursor()
+        for attempt in range(5):
+            print("Connection Attempt: ", attempt + 1)
+            try: 
+                self.conn = psycopg2.connect(
+                    dbname=config["database"]["dbname"],
+                    user=config["database"]["user"],
+                    password=config["database"]["password"],
+                    host=config["database"]["host"],
+                    port=config["database"]["port"]
+                )
+                self.cursor = self.conn.cursor()
+                break
+            except psycopg2.InterfaceError as e:
+                print("InterfaceError: ", e)
+            except psycopg2.OperationalError as e:
+                print("OperationalError", e)
+            except Exception as e:
+                print("Exception", e)
 
     def health_check(self):
         try:
@@ -33,18 +39,23 @@ class Database:
             return "Database connection failed"
 
     def create_tables(self):
-        self.cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS email_data
-            (
-                id            SERIAL PRIMARY KEY,
-                email_address TEXT,
-                unique_id     TEXT,
-                created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-            """
-        )
-        self.conn.commit()
+        try:
+            self.cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS email_data
+                (
+                    id            SERIAL PRIMARY KEY,
+                    email_address TEXT,
+                    unique_id     TEXT,
+                    created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+                """
+            )
+            self.conn.commit()
+        except psycopg2.InterfaceError as e:
+            print("InterfaceError", e)
+        except Exception as e:
+            print(e)
 
     def track_email(self, unique_id):
         try: 
