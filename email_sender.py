@@ -64,29 +64,30 @@ Warm regards,<br>
         self.server.quit()
 
 
-email_recepients = ["nrd1111@gmail.com", "birladavid@gmail.com"]
+email_recepients = []
 
 
 def get_email_recepients():
     file = pd.ExcelFile(r"D:\aargo\Nbfc .xlsx")
-    df = file.parse("Sheet 10")
+    df = file.parse("Sheet 16")
+
+    file.close()
 
     df.columns = ["ID", "Name", "Location", "D", "E", "F", "G", "H", "Email"]
-
     list = df["Email"].tolist()
-    
+
     email_recepients = []
-    
+
     for str in list:
         if str == "-NA-" or str == "" or str == "nan":
             # print("Skipping nan: ", str)
             continue
         arr = str.split(";")
-        
+
         for email in arr:
             if len(email.strip()) > 0:
                 email_recepients.append(email.strip().lower())
-            
+
     return email_recepients
 
 
@@ -134,12 +135,13 @@ def main(config):
     print("Email recepients: ", len(email_recepients))
     # print("Email recepients: ", email_recepients)
     # return
+    
     """ final_email_recepients = []
     to_send_email = False
     for email in email_recepients:
-        if email == "example@gmail.com":
+        if email == "some@example.com":
             to_send_email = True
-            continue
+            # continue
 
         if to_send_email:
             final_email_recepients.append(email) """
