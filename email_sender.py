@@ -64,7 +64,7 @@ Warm regards,<br>
         self.server.quit()
 
 
-email_recepients = []
+email_recepients = ['puru.agar99@gmail.com']
 
 
 def get_email_recepients():
@@ -103,7 +103,7 @@ def send_email(recipient, config: Config):
 <html>
   <body>
     <p>{config.body}</p>
-    <img src="{tracking_pixel_url}" width="1px" height="1px">
+    <img src="{tracking_pixel_url}" width="150x" height="50px"> 
   </body>
 </html>
 
@@ -131,7 +131,7 @@ def send_email(recipient, config: Config):
 
 def main(config):
 
-    email_recepients = get_email_recepients()
+    # email_recepients = get_email_recepients()
     print("Email recepients: ", len(email_recepients))
     # print("Email recepients: ", email_recepients)
     # return

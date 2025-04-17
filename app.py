@@ -24,13 +24,14 @@ def track_email(unique_id):
 
     print("Tracking status: ", tracking_satus)
     
-    with open("config.json") as cfg_file:
-        cfg = json.load(cfg_file)
+    if(tracking_satus == "Email tracked successfully"):
+        with open("config.json") as cfg_file:
+            cfg = json.load(cfg_file)
 
-        return redirect(
-            cfg.get("redirect_url"),
-            code=302,
-        )
+            return redirect(
+                cfg.get("redirect_url"),
+                code=302,
+            )
 
 
 """ if __name__ == "__main__":
