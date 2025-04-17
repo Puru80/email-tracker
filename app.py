@@ -23,15 +23,14 @@ def track_email(unique_id):
     tracking_satus = db.track_email(unique_id)
 
     print("Tracking status: ", tracking_satus)
-    
-    if(tracking_satus == "Email tracked successfully"):
-        with open("config.json") as cfg_file:
-            cfg = json.load(cfg_file)
 
-            return redirect(
-                cfg.get("redirect_url"),
-                code=302,
-            )
+    with open("config.json") as cfg_file:
+        cfg = json.load(cfg_file)
+
+        return redirect(
+            cfg.get("conkart_logo"),
+            code=302,
+        )
 
 
 """ if __name__ == "__main__":
