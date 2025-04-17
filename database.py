@@ -61,6 +61,9 @@ class Database:
         try: 
             self.cursor.execute("SELECT * FROM email_data WHERE unique_id=%s", (unique_id,))
             record = self.cursor.fetchone()
+            
+            print("Record: ", record)
+            
             if record is None:
                 return "Email does not exist"
 
@@ -86,7 +89,8 @@ class Database:
                 (email_address, unique_id),
             )
             self.conn.commit()
-            return "Email registered successfully"
+            print("Email registered successfully")
+            return "successfully"
         except psycopg2.InterfaceError as e:
             print(e)
             print("Email: ", email_address)
