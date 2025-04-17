@@ -1,6 +1,6 @@
-from flask import Flask
+from flask import Flask, redirect
 from database import Database
-from utils import Utils
+import json
 
 app = Flask(__name__)
 
@@ -23,7 +23,14 @@ def track_email(unique_id):
     tracking_satus = db.track_email(unique_id)
 
     print("Tracking status: ", tracking_satus)
-    return tracking_satus
+    
+    with open("config.json") as cfg_file:
+        cfg = json.load(cfg_file)
+
+        return redirect(
+            cfg.get("redirect_url"),
+            code=302,
+        )
 
 
 """ if __name__ == "__main__":
