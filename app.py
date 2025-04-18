@@ -27,10 +27,12 @@ def track_email(unique_id):
     with open("config.json") as cfg_file:
         cfg = json.load(cfg_file)
 
-        return redirect(
-            cfg.get("conkart_logo"),
-            code=302,
-        )
+        # return redirect(
+        #     cfg.get("conkart_logo"),
+        #     code=302,
+        # )
+        
+        return cfg.get("conkart_logo")
 
 
 """ if __name__ == "__main__":

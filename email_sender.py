@@ -52,6 +52,7 @@ Looking forward to your positive response.<br>
 <br>
 Warm regards,<br>
 {company_name}<br>
+{cc}<br>
 {contact}
         """
 
@@ -93,7 +94,7 @@ def get_email_recepients():
 
 def send_email(recipient, config: Config):
 
-    msg = MIMEMultipart()
+    msg = MIMEMultipart('alternative')
 
     unique_id = str(uuid.uuid4())
     tracking_pixel_url = f"{config.server_url}/track/{unique_id}"
@@ -103,7 +104,7 @@ def send_email(recipient, config: Config):
 <html>
   <body>
     <p>{config.body}</p>
-    <img src="{tracking_pixel_url}" width="150x" height="50px"> 
+    <img src="{tracking_pixel_url}" alt="Conkart Logo" width="150x" height="50px">
   </body>
 </html>
 
@@ -113,6 +114,7 @@ def send_email(recipient, config: Config):
     msg["From"] = formataddr((config.display_name, config.email_address))
     msg["Cc"] = config.cc
     msg["To"] = recipient
+    msg["Reply-To"] = config.cc
     mail_time = formatdate(timeval=None, localtime=True)
     print("Mail time: ", mail_time)
     msg["Date"] = mail_time
