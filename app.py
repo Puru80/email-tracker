@@ -1,4 +1,4 @@
-from flask import Flask, Response
+from flask import Flask, Response, send_file
 from database import Database
 import requests, json
 
@@ -30,17 +30,21 @@ def track_email(unique_id):
         image_url = cfg.get("conkart_logo")
         print("Image URL: ", image_url)
 
-        image_response = requests.get(image_url)
-        if image_response.status_code == 200:
-            print("Image fetched successfully")
-        else:
-            print("Failed to fetch image")
+        image_response = requests.get(image_url, stream=True)
+        if image_response.status_code != 200:
+            return "Image not found", 404
 
         return Response(
             image_response.content,
             mimetype="image/png",  # or image/png depending on the file
+            headers={"Content-Disposition": "inline"}
         )
 
+        # return send_file(
+        #     "Conkart Logo 2.png",
+        #     mimetype="image/png",  # or image/png depending on the file
+        # )
 
-""" if __name__ == "__main__":
-    app.run(debug=True) """
+
+if __name__ == "__main__":
+    app.run(debug=True)
