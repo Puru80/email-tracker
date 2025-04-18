@@ -1,6 +1,6 @@
-from flask import Flask, redirect
+from flask import Flask, Response
 from database import Database
-import json
+import requests, json
 
 app = Flask(__name__)
 
@@ -27,12 +27,19 @@ def track_email(unique_id):
     with open("config.json") as cfg_file:
         cfg = json.load(cfg_file)
 
-        # return redirect(
-        #     cfg.get("conkart_logo"),
-        #     code=302,
-        # )
-        
-        return cfg.get("conkart_logo")
+        image_url = cfg.get("conkart_logo")
+        print("Image URL: ", image_url)
+
+        image_response = requests.get(image_url)
+        if image_response.status_code == 200:
+            print("Image fetched successfully")
+        else:
+            print("Failed to fetch image")
+
+        return Response(
+            image_response.content,
+            mimetype="image/jpeg",  # or image/png depending on the file
+        )
 
 
 """ if __name__ == "__main__":

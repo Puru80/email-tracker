@@ -70,7 +70,7 @@ email_recepients = ['puru.agar99@gmail.com']
 
 def get_email_recepients():
     file = pd.ExcelFile(r"D:\aargo\Nbfc .xlsx")
-    df = file.parse("Sheet 16")
+    df = file.parse("Sheet 18")
 
     file.close()
 
@@ -98,6 +98,7 @@ def send_email(recipient, config: Config):
 
     unique_id = str(uuid.uuid4())
     tracking_pixel_url = f"{config.server_url}/track/{unique_id}"
+    # <img src="{tracking_pixel_url}" alt="Conkart Logo" width="150x" height="50px">
 
     email_content = f"""
     
