@@ -36,14 +36,9 @@ def track_email(unique_id):
 
         return Response(
             image_response.content,
-            mimetype="image/png",  # or image/png depending on the file
+            mimetype="image/png",
             headers={"Content-Disposition": "inline"}
         )
-
-        # return send_file(
-        #     "Conkart Logo 2.png",
-        #     mimetype="image/png",  # or image/png depending on the file
-        # )
 
 
 if __name__ == "__main__":
