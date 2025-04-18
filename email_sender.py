@@ -105,7 +105,7 @@ def send_email(recipient, config: Config):
 <html>
   <body>
     <p>{config.body}</p>
-    <img src="{tracking_pixel_url}" alt="Conkart Logo" width="150x" height="50px">
+    <img src="{tracking_pixel_url}" alt="Conkart Logo" width="150x" height="60px">
   </body>
 </html>
 
