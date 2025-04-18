@@ -38,7 +38,7 @@ def track_email(unique_id):
 
         return Response(
             image_response.content,
-            mimetype="image/jpeg",  # or image/png depending on the file
+            mimetype="image/png",  # or image/png depending on the file
         )
 
 
