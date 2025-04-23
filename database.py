@@ -10,13 +10,13 @@ class Database:
 
         for attempt in range(5):
             print("Connection Attempt: ", attempt + 1)
-            try: 
+            try:
                 self.conn = psycopg2.connect(
                     dbname=config["database"]["dbname"],
                     user=config["database"]["user"],
                     password=config["database"]["password"],
                     host=config["database"]["host"],
-                    port=config["database"]["port"]
+                    port=config["database"]["port"],
                 )
                 self.cursor = self.conn.cursor()
                 break
@@ -58,8 +58,10 @@ class Database:
             print(e)
 
     def track_email(self, unique_id):
-        try: 
-            self.cursor.execute("SELECT * FROM email_data WHERE unique_id=%s", (unique_id,))
+        try:
+            self.cursor.execute(
+                "SELECT * FROM email_data WHERE unique_id=%s", (unique_id,)
+            )
             record = self.cursor.fetchone()
 
             print("Record: ", record)
@@ -83,14 +85,13 @@ class Database:
             return str(e)
 
     def register_email(self, email_address, unique_id):
-        try: 
+        try:
             self.cursor.execute(
                 "INSERT INTO email_data (email_address, unique_id) VALUES (%s, %s)",
                 (email_address, unique_id),
             )
             self.conn.commit()
             print("Email registered successfully")
-            print("Unique ID: ", unique_id)
             return "successfully"
         except psycopg2.InterfaceError as e:
             print(e)
@@ -100,6 +101,49 @@ class Database:
             print(e)
             print("Email: ", email_address)
             print("Unique ID: ", unique_id)
+
+    def store_company_details(self, company):
+        try:
+            self.cursor.execute(
+                """
+                INSERT INTO company_info (company_name, location, reg_number, address, emails)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (
+                    company["name"],
+                    company["location"],
+                    company["registration_number"],
+                    company["address"],
+                    company["email"],
+                ),
+            )
+            self.conn.commit()
+            print("Company details stored successfully")
+        except Exception as e:
+            print(e)
+
+# Write a function to bulk insert company details
+    def bulk_insert_company_details(self, company_details):
+        try:
+            insert_query = """
+                INSERT INTO company_info (company_name, location, reg_number, address, emails)
+                VALUES (%s, %s, %s, %s, %s)
+            """
+            data_to_insert = [
+                (
+                    company["name"],
+                    company["location"],
+                    company["registration_number"],
+                    company["address"],
+                    company["email"],
+                )
+                for company in company_details
+            ]
+            self.cursor.executemany(insert_query, data_to_insert)
+            self.conn.commit()
+            print("Bulk insert of company details successful")
+        except Exception as e:
+            print(e)
 
     def close(self):
         self.cursor.close()

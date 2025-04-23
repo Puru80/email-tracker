@@ -18,6 +18,7 @@ class Config:
         contact,
         display_name,
         email_address,
+        smtp_username,
         app_password,
         smtp_server,
         cc,
@@ -27,6 +28,7 @@ class Config:
         self.contact = contact
         self.display_name = display_name
         self.email_address = email_address
+        self.smtp_username = smtp_username
         self.app_password = app_password
         self.smtp_server = smtp_server
         self.cc = cc
@@ -53,13 +55,12 @@ Looking forward to your positive response.<br>
 Warm regards,<br>
 {company_name}<br>
 {cc}<br>
-{contact}
         """
 
         # Set up the SMTP server
         self.server = smtplib.SMTP_SSL(smtp_server)
         self.server.ehlo()
-        self.server.login(email_address, app_password)
+        self.server.login(smtp_username, app_password)
 
     def quit(self):
         self.server.quit()
@@ -70,11 +71,11 @@ email_recepients = ['puru.agar99@gmail.com']
 
 def get_email_recepients():
     file = pd.ExcelFile(r"D:\aargo\Nbfc .xlsx")
-    df = file.parse("Sheet 18")
+    df = file.parse("Sheet 21")
 
     file.close()
 
-    df.columns = ["ID", "Name", "Location", "D", "E", "F", "G", "H", "Email"]
+    df.columns = ["ID", "Name", "Location", "D", "E", "Registration Number", "G", "Address", "Email"]
     list = df["Email"].tolist()
 
     email_recepients = []
@@ -111,7 +112,7 @@ def send_email(recipient, config: Config):
 """
     msg.attach(MIMEText(email_content, "html"))
     msg["Subject"] = config.subject
-    msg["From"] = formataddr((config.display_name, config.email_address))
+    msg["From"] = formataddr((config.display_name, "banking@conkart.co"))
     msg["Cc"] = config.cc
     msg["To"] = recipient
     msg["Reply-To"] = config.cc
@@ -122,7 +123,7 @@ def send_email(recipient, config: Config):
     print("Sending email to: ", recipient)
 
     try:
-        error = config.server.sendmail(config.email_address, recipient, msg.as_string())
+        error = config.server.sendmail("banking@conkart.co", recipient, msg.as_string())
         print("Error: ", error)
 
         db.register_email(recipient, unique_id)
@@ -133,15 +134,15 @@ def send_email(recipient, config: Config):
 
 def main(config):
 
-    email_recepients = get_email_recepients()
+    # email_recepients = get_email_recepients()
     print("Email recepients: ", len(email_recepients))
     # print("Email recepients: ", email_recepients)
     # return
-    
+
     """ final_email_recepients = []
     to_send_email = False
     for email in email_recepients:
-        if email == "some@example.com":
+        if email == "pinklinefinancepvtltd@gmail.com":
             to_send_email = True
             # continue
 
@@ -179,14 +180,18 @@ if __name__ == "__main__":
         # environment = cfg.get("environment", "prod")
 
         email_params = cfg.get("prod_email_config", {})
+        aws_smtp_config = cfg.get("aws_smtp_config", {})
 
         email_config = Config(
             email_params.get("company_name"),
             email_params.get("contact"),
             email_params.get("display_name"),
             email_params.get("email_address"),
-            email_params.get("email_password"),
-            email_params.get("smtp_server"),
+            # email_params.get("email_password"),
+            # email_params.get("smtp_server"),
+            aws_smtp_config.get("smtp_username"),
+            aws_smtp_config.get("smtp_password"),
+            aws_smtp_config.get("smtp_server"),
             email_params.get("cc"),
             cfg.get("server_url"),
         )
