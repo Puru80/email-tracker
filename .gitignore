@@ -171,6 +171,7 @@ cython_debug/
 .pypirc
 
 config.json
+config_new.json
 sql_gen.py
 output.sql
-Conkart Logo 2.png
+ConkartLogo2.png

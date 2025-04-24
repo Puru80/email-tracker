@@ -123,7 +123,7 @@ def send_email(recipient, config: Config):
     print("Sending email to: ", recipient)
 
     try:
-        error = config.server.sendmail("banking@conkart.co", recipient, msg.as_string())
+        error = config.server.sendmail("banking@conkart.co", ["puru.agar99@gmail.com", "puru.agarwal@conkart.com"], msg.as_string())
         print("Error: ", error)
 
         db.register_email(recipient, unique_id)

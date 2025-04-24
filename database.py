@@ -102,6 +102,35 @@ class Database:
             print("Email: ", email_address)
             print("Unique ID: ", unique_id)
 
+    # Write a function to bulk email register emails
+    def bulk_register_emails(self, emails):
+        try:
+            insert_query = """
+                INSERT INTO email_data (email_address, unique_id, created_at)
+                VALUES (%s, %s, %s)
+            """
+            data_to_insert = [(email["to_email"], email["unique_id"], email["sent_at"]) for email in emails]
+            self.cursor.executemany(insert_query, data_to_insert)
+            self.conn.commit()
+            print("Bulk insert of emails successful")
+        except Exception as e:
+            print(e)
+
+    def get_company_details(self, offset=0):
+        try:
+            self.cursor.execute(
+                f"""
+                SELECT * FROM company_info
+                order by id
+                limit 500
+                offset {offset}
+                """
+            )
+            records = self.cursor.fetchall()
+            return records
+        except Exception as e:
+            print(e)
+
     def store_company_details(self, company):
         try:
             self.cursor.execute(
@@ -122,7 +151,6 @@ class Database:
         except Exception as e:
             print(e)
 
-# Write a function to bulk insert company details
     def bulk_insert_company_details(self, company_details):
         try:
             insert_query = """

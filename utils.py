@@ -1,17 +1,13 @@
-import json
+# from datetime import datetime
+# import pytz
 
+# # Get current time in UTC
+# current_time = datetime.now(pytz.utc)
+# current_time_string = current_time.strftime("%Y-%m-%d %H:%M:%S.%f") + " +00:00"
+# time_string = current_time_string
 
-class Utils:
+# print(time_string)
 
-    def __init__(self, config_file):
-        with open(config_file, "r") as f:
-            config = json.load(f)
-
-        self.read_ignore_ips = config["read_ignore_ips"].split(", ")
-
-    def is_ip_ignored(self, client_ip):
-        if client_ip in self.read_ignore_ips:
-            print("Ignoring IP: ", client_ip)
-            return True
-
-        return False
+my_list = list(range(200))
+print(my_list[100:])
+# Output: [100, 101, 102, ..., 199]
