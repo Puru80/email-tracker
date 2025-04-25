@@ -116,13 +116,13 @@ class Database:
         except Exception as e:
             print(e)
 
-    def get_company_details(self, offset=0):
+    def get_company_details(self, limit=500, offset=0):
         try:
             self.cursor.execute(
                 f"""
                 SELECT * FROM company_info
                 order by id
-                limit 500
+                limit {limit}
                 offset {offset}
                 """
             )

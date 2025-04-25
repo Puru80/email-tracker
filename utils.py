@@ -9,5 +9,6 @@
 # print(time_string)
 
 my_list = list(range(200))
+print(my_list[0:])
 print(my_list[100:])
 # Output: [100, 101, 102, ..., 199]

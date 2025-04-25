@@ -9,7 +9,6 @@ from database import Database
 from datetime import datetime
 import pytz
 
-
 db = Database("config_new.json")
 db.create_tables()
 
@@ -41,6 +40,7 @@ class Config:
         # Email content
         self.subject = "Partnership Opportunity for Bill Discounting!"
         self.body = f"""
+        
 Dear Sir/Madam,<br>
 <br>
 Warm Greetings.<br>
@@ -61,13 +61,13 @@ Warm regards,<br>
 {cc}<br>
         """
 
-        # Set up the SMTP server
-        self.server = smtplib.SMTP_SSL(smtp_server)
-        self.server.ehlo()
-        self.server.login(smtp_username, smtp_password)
+    #     # Set up the SMTP server
+    #     self.server = smtplib.SMTP_SSL(smtp_server)
+    #     self.server.ehlo()
+    #     self.server.login(smtp_username, smtp_password)
 
-    def quit(self):
-        self.server.quit()
+    # def quit(self):
+    #     self.server.quit()
 
 
 class EmailSender:
@@ -119,22 +119,18 @@ class EmailSender:
             server = smtplib.SMTP(self.smtp_server, self.smtp_port)
             server.starttls()
             server.login(self.smtp_username, self.password)
-            server.sendmail(from_email, to_email, msg.as_string())
+
+            try:
+                error = server.sendmail(from_email, to_email, msg.as_string())
+                print("Error: ", error)
+
+                db.register_email(to_email, unique_id)
+            except Exception as e:
+                print(e)
+                print("Failed to send mail: ", to_email)
+                print("Unique ID: ", unique_id)
+
             server.quit()
-
-            self.email_records.append(
-                {
-                    "to_email": to_email,
-                    "unique_id": unique_id,
-                    "sent_at": self.get_current_time_string(),
-                }
-            )
-
-            # Perform bulk insert every 100 records
-            if len(self.email_records) >= 2:
-                db.bulk_register_emails(self.email_records)
-                self.email_records = self.email_records[3:]
-                print(self.email_records)
 
     def worker(self):
         while True:
@@ -161,48 +157,14 @@ class EmailSender:
     def add_email(
         self, from_email, to_email, display_name, cc, subject, body, server_url
     ):
-        self.queue.put(
-            (from_email, to_email, display_name, cc, subject, body, server_url)
-        )
+        email_task = (from_email, to_email, display_name, cc, subject, body, server_url)
+        if email_task not in list(self.queue.queue):
+            self.queue.put(email_task)
+        else:
+            print(f"Duplicate email task detected: {email_task}")
 
     def wait(self):
         self.queue.join()
-
-
-""" def send_emails_with_rate_limit(
-    emails, rate_per_second, smtp_server, smtp_port, smtp_username, smtp_password
-):
-    email_queue = Queue()
-    num_senders = 5  # Adjust the number of sender threads as needed
-    senders = []
-
-    for _ in range(num_senders):
-        sender = EmailSender(
-            email_queue, smtp_server, smtp_port, smtp_username, smtp_password
-        )
-        senders.append(sender)
-        sender.daemon = True
-        sender.start()
-
-    start_time = time.time()
-    emails_sent = 0
-
-    for email in emails:
-        email_queue.put(email)
-        emails_sent += 1
-        elapsed_time = time.time() - start_time
-        if emails_sent < rate_per_second:
-            time.sleep(1.0 / rate_per_second)  # Adjust sleep time for desired rate
-        else:
-            time.sleep(1.0)
-            start_time = time.time()
-            emails_sent = 0
-
-    for _ in range(num_senders):
-        email_queue.put(None)
-
-    for sender in senders:
-        sender.join() """
 
 
 def main(email_config: Config):
@@ -221,51 +183,26 @@ def main(email_config: Config):
     email_sender.start(num_workers=10)
 
     page = 1
-    page_size = 500
+    page_size = 1000
     offset = 0
 
-    email_sender.add_email(
-        email_config.email_address,
-        "puru.agar99@gmail.com",
-        email_config.display_name,
-        email_config.cc,
-        email_config.subject,
-        email_config.body,
-        email_config.server_url,
-    )
-    email_sender.add_email(
-        email_config.email_address,
-        "abhishekchavda14@gmail.com",
-        email_config.display_name,
-        email_config.cc,
-        email_config.subject,
-        email_config.body,
-        email_config.server_url,
-    )
-    email_sender.add_email(
-        email_config.email_address,
-        "gaganagarwala@gmail.com",
-        email_config.display_name,
-        email_config.cc,
-        email_config.subject,
-        email_config.body,
-        email_config.server_url,
-    )
-
-    """ while True:
+    while True:
         # Get company details from database
-        company_details = db.get_company_details(offset=offset)
+        company_details = db.get_company_details(limit=page_size, offset=offset)
+
         print("Company Details: ", len(company_details))
         if not company_details:
             break
 
         # Send emails to each company
         for company in company_details:
-            arr = company_details[1].split(";")
+            arr = company[1].split(";")
             for email in arr:
+                if email == "":
+                    continue
                 email_sender.add_email(
                     email_config.email_address,
-                    email.strip(),
+                    email.strip().lower(),
                     email_config.display_name,
                     email_config.cc,
                     email_config.subject,
@@ -273,13 +210,14 @@ def main(email_config: Config):
                     email_config.server_url,
                 )
 
-        offset += page_size
-        page += 1 """
+        email_sender.wait()
 
-    email_sender.wait()
+        offset += page_size
+        page += 1
 
     db.close()
-    email_config.quit()
+
+    print(db.conn.closed)
 
     return
 

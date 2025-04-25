@@ -28,7 +28,6 @@ def track_email(unique_id):
         cfg = json.load(cfg_file)
 
         image_url = cfg.get("conkart_logo")
-        print("Image URL: ", image_url)
 
         image_response = requests.get(image_url, stream=True)
         if image_response.status_code != 200:
