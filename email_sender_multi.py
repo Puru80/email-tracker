@@ -77,6 +77,7 @@ class EmailSender:
         self.smtp_username = smtp_username
         self.password = smtp_password
         self.queue = Queue()
+        self.emails_sent = set()
         self.rate_limit = 14  # emails per second
         self.lock = threading.Lock()
         self.email_records = []
@@ -158,10 +159,11 @@ class EmailSender:
         self, from_email, to_email, display_name, cc, subject, body, server_url
     ):
         email_task = (from_email, to_email, display_name, cc, subject, body, server_url)
-        if email_task not in list(self.queue.queue):
+        if to_email not in self.emails_sent:
+            self.emails_sent.add(to_email)
             self.queue.put(email_task)
         else:
-            print(f"Duplicate email task detected: {email_task}")
+            print("Already sent to: ", to_email)
 
     def wait(self):
         self.queue.join()
@@ -184,7 +186,7 @@ def main(email_config: Config):
 
     page = 1
     page_size = 1000
-    offset = 0
+    offset = 3020
 
     while True:
         # Get company details from database
@@ -196,9 +198,14 @@ def main(email_config: Config):
 
         # Send emails to each company
         for company in company_details:
-            arr = company[1].split(";")
+            emails = company[1].strip()
+            if emails == "-NA-" or emails == "":
+                continue
+            
+            arr = emails.split(";")
             for email in arr:
-                if email == "":
+                email = email.strip().lower()
+                if email == "" or email == "-na-":
                     continue
                 email_sender.add_email(
                     email_config.email_address,
@@ -209,6 +216,10 @@ def main(email_config: Config):
                     email_config.body,
                     email_config.server_url,
                 )
+
+        print("Emails in queue: ", email_sender.queue.qsize())
+        print("Emails in list: ", len(email_sender.emails_sent))
+        # break
 
         email_sender.wait()
 

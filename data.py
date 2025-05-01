@@ -56,9 +56,10 @@ def get_company_details(sheet_numer):
 
 def main():
     page_size = 1000
-    offset = 0
+    offset = 4000
 
     db = Database("config_new.json")
+    emails_list = set()
 
     while True:
         company_details = db.get_company_details(limit=page_size, offset=offset)
@@ -71,13 +72,18 @@ def main():
                 continue
             arr = emails.split(";")
             for email in arr:
-                if email == "":
+                email = email.strip().lower()
+                if email == "" or email == "-na-":
                     continue
 
-                with open("emails.txt", "a") as f:
-                    f.write(email.strip().lower() + "\n")
+                if email not in emails_list:
+                    emails_list.add(email)
+                    with open("emails.txt", "a") as f:
+                        f.write(email + "\n")
 
         print("1000 Entries processed")
+        print("Emails in list: ", len(emails_list))
+        break
 
         offset += page_size
         time.sleep(1)
