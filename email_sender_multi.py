@@ -168,7 +168,7 @@ class EmailSender:
     def wait(self):
         self.queue.join()
 
-
+# TODO: Add mutiple contacts in Reply-To field
 def main(email_config: Config):
     # Example email data
     """
@@ -224,11 +224,13 @@ def main(email_config: Config):
         email_sender.wait()
 
         offset += page_size
+        
+        if offset > 5500: 
+            break
+        
         page += 1
 
     db.close()
-
-    print(db.conn.closed)
 
     return
 
