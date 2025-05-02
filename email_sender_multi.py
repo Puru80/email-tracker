@@ -21,6 +21,7 @@ class Config:
         contact,
         display_name,
         email_address,
+        reply_to,
         smtp_username,
         smtp_password,
         smtp_server,
@@ -31,6 +32,7 @@ class Config:
         self.contact = contact
         self.display_name = display_name
         self.email_address = email_address
+        self.reply_to = reply_to
         self.smtp_username = smtp_username
         self.smtp_password = smtp_password
         self.smtp_server = smtp_server
@@ -89,7 +91,15 @@ class EmailSender:
         return time_string
 
     def send_email(
-        self, from_email, to_email, display_name, cc, subject, body, server_url
+        self,
+        from_email,
+        to_email,
+        display_name,
+        cc,
+        reply_to,
+        subject,
+        body,
+        server_url,
     ):
         msg = MIMEMultipart("alternative")
 
@@ -112,7 +122,7 @@ class EmailSender:
         msg["From"] = formataddr((display_name, from_email))
         msg["Cc"] = cc
         msg["To"] = to_email
-        msg["Reply-To"] = cc
+        msg["Reply-To"] = ", ".join([cc, reply_to])
         mail_time = formatdate(timeval=None, localtime=True)
         msg["Date"] = mail_time
 
@@ -135,12 +145,26 @@ class EmailSender:
 
     def worker(self):
         while True:
-            from_email, to_email, display_name, cc, subject, body, server_url = (
-                self.queue.get()
-            )
+            (
+                from_email,
+                to_email,
+                display_name,
+                cc,
+                reply_to,
+                subject,
+                body,
+                server_url,
+            ) = self.queue.get()
             start_time = time.time()
             self.send_email(
-                from_email, to_email, display_name, cc, subject, body, server_url
+                from_email,
+                to_email,
+                display_name,
+                cc,
+                reply_to,
+                subject,
+                body,
+                server_url,
             )
             elapsed_time = time.time() - start_time
             delay = max(0, 1 / self.rate_limit - elapsed_time)
@@ -156,9 +180,26 @@ class EmailSender:
             threads.append(thread)
 
     def add_email(
-        self, from_email, to_email, display_name, cc, subject, body, server_url
+        self,
+        from_email,
+        to_email,
+        display_name,
+        cc,
+        reply_to,
+        subject,
+        body,
+        server_url,
     ):
-        email_task = (from_email, to_email, display_name, cc, subject, body, server_url)
+        email_task = (
+            from_email,
+            to_email,
+            display_name,
+            cc,
+            reply_to,
+            subject,
+            body,
+            server_url,
+        )
         if to_email not in self.emails_sent:
             self.emails_sent.add(to_email)
             self.queue.put(email_task)
@@ -168,7 +209,7 @@ class EmailSender:
     def wait(self):
         self.queue.join()
 
-# TODO: Add mutiple contacts in Reply-To field
+
 def main(email_config: Config):
     # Example email data
     """
@@ -186,7 +227,7 @@ def main(email_config: Config):
 
     page = 1
     page_size = 1000
-    offset = 3020
+    offset = 0
 
     while True:
         # Get company details from database
@@ -201,7 +242,7 @@ def main(email_config: Config):
             emails = company[1].strip()
             if emails == "-NA-" or emails == "":
                 continue
-            
+
             arr = emails.split(";")
             for email in arr:
                 email = email.strip().lower()
@@ -212,6 +253,7 @@ def main(email_config: Config):
                     email.strip().lower(),
                     email_config.display_name,
                     email_config.cc,
+                    email_config.reply_to,
                     email_config.subject,
                     email_config.body,
                     email_config.server_url,
@@ -224,10 +266,6 @@ def main(email_config: Config):
         email_sender.wait()
 
         offset += page_size
-        
-        if offset > 5500: 
-            break
-        
         page += 1
 
     db.close()
@@ -262,6 +300,7 @@ if __name__ == "__main__":
             email_params.get("contact"),
             email_params.get("display_name"),
             email_params.get("email_address"),
+            email_params.get("reply-to"),
             aws_smtp_config.get("smtp_username"),
             aws_smtp_config.get("smtp_password"),
             aws_smtp_config.get("smtp_server"),
