@@ -7,7 +7,22 @@ import threading
 from queue import Queue
 from database import Database
 from datetime import datetime
-import pytz
+import pytz, logging
+
+# Logger setup
+logger = logging.getLogger("email_sender")
+logger.setLevel(logging.INFO)
+
+# Create a file handler
+file_handler = logging.FileHandler("email_sender.log")
+file_handler.setLevel(logging.INFO)
+
+# Create a formatter and set it for the file handler
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+file_handler.setFormatter(formatter)
+
+# Add the file handler to the logger
+logger.addHandler(file_handler)
 
 db = Database("config_new.json")
 db.create_tables()
@@ -73,8 +88,8 @@ Warm regards,<br>
 
 
 class EmailSender:
-    def __init__(self, smtp_server, smtp_port, smtp_username, smtp_password):
-        self.smtp_server = smtp_server
+    def __init__(self, smtp_server_url, smtp_port, smtp_username, smtp_password):
+        self.smtp_server_url = smtp_server_url
         self.smtp_port = smtp_port
         self.smtp_username = smtp_username
         self.password = smtp_password
@@ -83,12 +98,38 @@ class EmailSender:
         self.rate_limit = 14  # emails per second
         self.lock = threading.Lock()
         self.email_records = []
+        self.emails_sent_in_last_second = 0
+        self.last_second = int(time.time())
+        self.rate_limit_lock = threading.Lock()
+        self.smtp_server = None
+
+    def connect_to_smtp_server(self):
+        self.smtp_server = smtplib.SMTP(self.smtp_server_url, self.smtp_port)
+        self.smtp_server.starttls()
+        self.smtp_server.login(self.smtp_username, self.password)
 
     def get_current_time_string(self):
         current_time = datetime.now(pytz.utc)
         time_string = current_time.strftime("%Y-%m-%d %H:%M:%S.%f") + " +00:00"
 
         return time_string
+
+    def increment_emails_sent(self):
+        with self.rate_limit_lock:
+            current_second = int(time.time())
+            if current_second != self.last_second:
+                self.last_second = current_second
+                self.emails_sent_in_last_second = 0
+            self.emails_sent_in_last_second += 1
+
+    def wait_for_rate_limit(self):
+        with self.rate_limit_lock:
+            while self.emails_sent_in_last_second >= self.rate_limit:
+                time.sleep(0.1)
+                current_second = int(time.time())
+                if current_second != self.last_second:
+                    self.last_second = current_second
+                    self.emails_sent_in_last_second = 0
 
     def send_email(
         self,
@@ -127,12 +168,11 @@ class EmailSender:
         msg["Date"] = mail_time
 
         with self.lock:
-            server = smtplib.SMTP(self.smtp_server, self.smtp_port)
-            server.starttls()
-            server.login(self.smtp_username, self.password)
+            if self.smtp_server is None:
+                self.connect_to_smtp_server()
 
             try:
-                error = server.sendmail(from_email, to_email, msg.as_string())
+                error = self.smtp_server.sendmail(from_email, to_email, msg.as_string())
                 print("Error: ", error)
 
                 db.register_email(to_email, unique_id)
@@ -140,8 +180,6 @@ class EmailSender:
                 print(e)
                 print("Failed to send mail: ", to_email)
                 print("Unique ID: ", unique_id)
-
-            server.quit()
 
     def worker(self):
         while True:
@@ -155,7 +193,7 @@ class EmailSender:
                 body,
                 server_url,
             ) = self.queue.get()
-            start_time = time.time()
+            self.wait_for_rate_limit()
             self.send_email(
                 from_email,
                 to_email,
@@ -166,9 +204,7 @@ class EmailSender:
                 body,
                 server_url,
             )
-            elapsed_time = time.time() - start_time
-            delay = max(0, 1 / self.rate_limit - elapsed_time)
-            time.sleep(delay)
+            self.increment_emails_sent()
             self.queue.task_done()
 
     def start(self, num_workers):
@@ -208,6 +244,13 @@ class EmailSender:
 
     def wait(self):
         self.queue.join()
+        
+    def close_server_connection(self):
+        if self.smtp_server:
+            self.smtp_server.quit()
+            self.smtp_server = None
+        else:
+            logger.info("SMTP server connection already closed.")
 
 
 def main(email_config: Config):
@@ -216,6 +259,9 @@ def main(email_config: Config):
     Get paginated company details from database
     and send emails to each company.
     """
+
+    start_time = time.time()
+    logger.info("Start time: %s", start_time)
 
     email_sender = EmailSender(
         email_config.smtp_server,
@@ -230,6 +276,9 @@ def main(email_config: Config):
     offset = 0
 
     while True:
+        logger.info("Page: %d", page)
+        logger.info("Offset: %d", offset)
+
         # Get company details from database
         company_details = db.get_company_details(limit=page_size, offset=offset)
 
@@ -269,6 +318,14 @@ def main(email_config: Config):
         page += 1
 
     db.close()
+    email_sender.close_server_connection()
+    logger.info("SMTP server connection closed.")
+
+    end_time = time.time()
+    logger.info("End time: %s", end_time)
+
+    logger.info("Total time taken: %s", end_time - start_time)
+    logger.info("Total emails sent: %d", len(email_sender.emails_sent))
 
     return
 
