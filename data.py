@@ -40,6 +40,30 @@ def get_company_details(sheet_numer):
     return company_details
 
 
+def read_emails(file_path, offset=0, limit=None):
+    """
+    Reads emails from a text file and returns a list of emails with offset and limit.
+
+    Args:
+        file_path (str): Path to the text file containing emails.
+        offset (int, optional): Number of emails to skip. Defaults to 0.
+        limit (int, optional): Maximum number of emails to return. Defaults to None.
+
+    Returns:
+        list: List of emails.
+    """
+    try:
+        with open(file_path, "r") as file:
+            emails = [line.strip() for line in file.readlines()]
+            if limit is not None:
+                return emails[offset : offset + limit]
+            else:
+                return emails[offset:]
+    except FileNotFoundError:
+        print(f"File not found: {file_path}")
+        return []
+
+
 """ def main():
     for i in range(31, 32):
         company_details = get_company_details(i)
@@ -54,7 +78,17 @@ def get_company_details(sheet_numer):
         time.sleep(1) """
 
 
-def main():
+def get_emails_from_db(offset=0, limit=None):
+    """
+    Fetches emails from the database and writes them to a text file.
+
+    Args:
+        offset (int, optional): Number of emails to skip. Defaults to 0.
+        limit (int, optional): Maximum number of emails to return. Defaults to None.
+
+    Returns:
+        None
+    """
     page_size = 1000
     offset = 0
 
@@ -65,16 +99,16 @@ def main():
         company_details = db.get_company_details(limit=page_size, offset=offset)
         if len(company_details) == 0:
             break
-        
+
         print("Processing: ", offset, " to ", offset + page_size)
 
         for company in company_details:
             emails = company[1]
-            
+
             if emails == "-NA-" or emails == "":
                 print("No Emails Found: ", company[0])
                 continue
-            
+
             arr = emails.split(";")
             for email in arr:
                 email = email.strip().lower()
@@ -91,6 +125,17 @@ def main():
 
         offset += page_size
         time.sleep(1)
+
+
+def main():
+    file_path = "emails.txt"
+    offset = 0
+    limit = 1000
+    
+    emails = read_emails(file_path, offset, limit)
+    print("Emails: ", len(emails))
+    print(emails[0])
+    print(emails[limit-1])
 
 
 if __name__ == "__main__":

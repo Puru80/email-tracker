@@ -78,14 +78,6 @@ Warm regards,<br>
 {cc}<br>
         """
 
-    #     # Set up the SMTP server
-    #     self.server = smtplib.SMTP_SSL(smtp_server)
-    #     self.server.ehlo()
-    #     self.server.login(smtp_username, smtp_password)
-
-    # def quit(self):
-    #     self.server.quit()
-
 
 class EmailSender:
     def __init__(self, smtp_server_url, smtp_port, smtp_username, smtp_password):
@@ -104,9 +96,10 @@ class EmailSender:
         self.smtp_server = None
 
     def connect_to_smtp_server(self):
-        self.smtp_server = smtplib.SMTP(self.smtp_server_url, self.smtp_port)
-        self.smtp_server.starttls()
-        self.smtp_server.login(self.smtp_username, self.password)
+        smtp_server = smtplib.SMTP(self.smtp_server_url, self.smtp_port)
+        smtp_server.starttls()
+        smtp_server.login(self.smtp_username, self.password)
+        return smtp_server
 
     def get_current_time_string(self):
         current_time = datetime.now(pytz.utc)
@@ -133,6 +126,7 @@ class EmailSender:
 
     def send_email(
         self,
+        smtp_server,
         from_email,
         to_email,
         display_name,
@@ -168,20 +162,18 @@ class EmailSender:
         msg["Date"] = mail_time
 
         with self.lock:
-            if self.smtp_server is None:
-                self.connect_to_smtp_server()
-
             try:
-                error = self.smtp_server.sendmail(from_email, to_email, msg.as_string())
+                error = smtp_server.sendmail(from_email, to_email, msg.as_string())
                 print("Error: ", error)
 
                 db.register_email(to_email, unique_id)
             except Exception as e:
-                print(e)
-                print("Failed to send mail: ", to_email)
-                print("Unique ID: ", unique_id)
+                logger.error(e)
+                logger.error("Failed to send mail: %s", to_email)
 
     def worker(self):
+        server = self.connect_to_smtp_server()
+        
         while True:
             (
                 from_email,
@@ -195,6 +187,7 @@ class EmailSender:
             ) = self.queue.get()
             self.wait_for_rate_limit()
             self.send_email(
+                server,
                 from_email,
                 to_email,
                 display_name,
@@ -244,7 +237,7 @@ class EmailSender:
 
     def wait(self):
         self.queue.join()
-        
+
     def close_server_connection(self):
         if self.smtp_server:
             self.smtp_server.quit()
@@ -253,34 +246,31 @@ class EmailSender:
             logger.info("SMTP server connection already closed.")
 
 
-def main(email_config: Config):
-    # Example email data
+def read_emails(file_path, offset=0, limit=None):
     """
-    Get paginated company details from database
-    and send emails to each company.
+    Reads emails from a text file and returns a list of emails with offset and limit.
+
+    Args:
+        file_path (str): Path to the text file containing emails.
+        offset (int, optional): Number of emails to skip. Defaults to 0.
+        limit (int, optional): Maximum number of emails to return. Defaults to None.
+
+    Returns:
+        list: List of emails.
     """
+    try:
+        with open(file_path, "r") as file:
+            emails = [line.strip() for line in file.readlines()]
+            if limit is not None:
+                return emails[offset : offset + limit]
+            else:
+                return emails[offset:]
+    except FileNotFoundError:
+        print(f"File not found: {file_path}")
+        return []
 
-    start_time = time.time()
-    logger.info("Start time: %s", start_time)
 
-    email_sender = EmailSender(
-        email_config.smtp_server,
-        587,  # SMTP port for TLS
-        email_config.smtp_username,
-        email_config.smtp_password,
-    )
-    email_sender.start(num_workers=10)
-
-    page = 1
-    page_size = 1000
-    offset = 0
-
-    while True:
-        logger.info("Page: %d", page)
-        logger.info("Offset: %d", offset)
-
-        # Get company details from database
-        company_details = db.get_company_details(limit=page_size, offset=offset)
+""" company_details = db.get_company_details(limit=page_size, offset=offset)
 
         print("Company Details: ", len(company_details))
         if not company_details:
@@ -307,6 +297,66 @@ def main(email_config: Config):
                     email_config.body,
                     email_config.server_url,
                 )
+
+        print("Emails in queue: ", email_sender.queue.qsize())
+        print("Emails in list: ", len(email_sender.emails_sent))
+        # break
+
+        email_sender.wait()
+
+        offset += page_size
+        page += 1 """
+
+
+def main(email_config: Config):
+    # Example email data
+    """
+    Get paginated company details from database
+    and send emails to each company.
+    """
+
+    start_time = time.time()
+    logger.info("Start time: %s", start_time)
+
+    email_sender = EmailSender(
+        email_config.smtp_server,
+        587,  # SMTP port for TLS
+        email_config.smtp_username,
+        email_config.smtp_password,
+    )
+    email_sender.start(num_workers=10)
+
+    page = 2
+    page_size = 1000
+    offset = 4000
+
+    while True:
+        # if page > 4: 
+        #     break
+        
+        logger.info("Page: %d", page)
+        logger.info("Offset: %d", offset)
+
+        # Get company details from file
+        emails_list = read_emails("emails.txt", limit=page_size, offset=offset)
+
+        print("Company Details: ", len(emails_list))
+        if not emails_list:
+            logger.info("No more emails to process.")
+            break
+
+        # Send emails to each company
+        for email in emails_list:
+            email_sender.add_email(
+                email_config.email_address,
+                email.strip(),
+                email_config.display_name,
+                email_config.cc,
+                email_config.reply_to,
+                email_config.subject,
+                email_config.body,
+                email_config.server_url,
+            )
 
         print("Emails in queue: ", email_sender.queue.qsize())
         print("Emails in list: ", len(email_sender.emails_sent))
