@@ -64,6 +64,27 @@ def read_emails(file_path, offset=0, limit=None):
         return []
 
 
+def get_read_emails(file_path):
+    """
+    Reads emails from a text file and returns a list of emails with offset and limit.
+
+    Args:
+        file_path (str): Path to the text file containing emails.
+        offset (int, optional): Number of emails to skip. Defaults to 0.
+        limit (int, optional): Maximum number of emails to return. Defaults to None.
+
+    Returns:
+        list: List of emails.
+    """
+    try:
+        with open(file_path, "r") as file:
+            emails = [line.strip() for line in file.readlines()]
+            return emails
+    except FileNotFoundError:
+        print(f"File not found: {file_path}")
+        return []
+
+
 """ def main():
     for i in range(31, 32):
         company_details = get_company_details(i)
@@ -78,7 +99,7 @@ def read_emails(file_path, offset=0, limit=None):
         time.sleep(1) """
 
 
-def get_emails_from_db(offset=0, limit=None):
+def get_emails_from_db(offset=0, limit=None, exclusion_set=None):
     """
     Fetches emails from the database and writes them to a text file.
 
@@ -89,7 +110,7 @@ def get_emails_from_db(offset=0, limit=None):
     Returns:
         None
     """
-    page_size = 1000
+    page_size = limit if limit is not None else 1000
     offset = 0
 
     db = Database("config_new.json")
@@ -114,13 +135,17 @@ def get_emails_from_db(offset=0, limit=None):
                 email = email.strip().lower()
                 if email == "" or email == "-na-":
                     continue
+                
+                if email in exclusion_set:
+                    print("Email already read: ", email)
+                    continue
 
                 if email not in emails_list:
                     emails_list.add(email)
                     with open("emails.txt", "a") as f:
                         f.write(email + "\n")
 
-        print("1000 Entries processed")
+        print(f"{page_size} Entries processed")
         print("Emails in list: ", len(emails_list))
 
         offset += page_size
@@ -128,6 +153,9 @@ def get_emails_from_db(offset=0, limit=None):
 
 
 def main():
+    exclusion_set = get_read_emails("email_reads.txt")
+    get_emails_from_db(offset=0, limit=1000, exclusion_set=exclusion_set)
+    
     file_path = "emails.txt"
     offset = 0
     limit = 1000
@@ -135,7 +163,7 @@ def main():
     emails = read_emails(file_path, offset, limit)
     print("Emails: ", len(emails))
     print(emails[0])
-    print(emails[limit-1])
+    print(emails[len(emails)-1])
 
 
 if __name__ == "__main__":

@@ -173,7 +173,7 @@ class EmailSender:
 
     def worker(self):
         server = self.connect_to_smtp_server()
-        
+
         while True:
             (
                 from_email,
@@ -324,16 +324,16 @@ def main(email_config: Config):
         email_config.smtp_username,
         email_config.smtp_password,
     )
-    email_sender.start(num_workers=10)
+    email_sender.start(num_workers=15)
 
-    page = 2
+    page = 1
     page_size = 1000
-    offset = 4000
+    offset = 0
 
     while True:
-        # if page > 4: 
-        #     break
-        
+        if page > 3:
+            break
+
         logger.info("Page: %d", page)
         logger.info("Offset: %d", offset)
 

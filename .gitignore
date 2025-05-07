@@ -174,5 +174,5 @@ config.json
 config_new.json
 sql_gen.py
 output.sql
-ConkartLogo2.png
-emails.txt
+*.png
+*.txt
