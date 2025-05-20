@@ -328,7 +328,7 @@ def main(email_config: Config):
 
     page = 1
     page_size = 1000
-    offset = 0
+    offset = 6000
 
     while True:
         if page > 3:

@@ -2,6 +2,8 @@ import time
 import pandas as pd
 from database import Database
 
+db = Database("config.json")
+
 
 def get_company_details(sheet_numer):
     print("Reading company details from excel file...")
@@ -135,7 +137,7 @@ def get_emails_from_db(offset=0, limit=None, exclusion_set=None):
                 email = email.strip().lower()
                 if email == "" or email == "-na-":
                     continue
-                
+
                 if email in exclusion_set:
                     print("Email already read: ", email)
                     continue
@@ -155,11 +157,11 @@ def get_emails_from_db(offset=0, limit=None, exclusion_set=None):
 def main():
     exclusion_set = get_read_emails("email_reads.txt")
     get_emails_from_db(offset=0, limit=1000, exclusion_set=exclusion_set)
-    
+
     file_path = "emails.txt"
     offset = 0
     limit = 1000
-    
+
     emails = read_emails(file_path, offset, limit)
     print("Emails: ", len(emails))
     print(emails[0])

@@ -1,5 +1,23 @@
 import psycopg2
+from psycopg2 import sql
 import json
+import logging
+
+
+# Logger setup
+logger = logging.getLogger("email_sender")
+logger.setLevel(logging.INFO)
+
+# Create a file handler
+file_handler = logging.FileHandler("email_status.log")
+file_handler.setLevel(logging.INFO)
+
+# Create a formatter and set it for the file handler
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+file_handler.setFormatter(formatter)
+
+# Add the file handler to the logger
+logger.addHandler(file_handler)
 
 
 class Database:
@@ -109,7 +127,10 @@ class Database:
                 INSERT INTO email_data (email_address, unique_id, created_at)
                 VALUES (%s, %s, %s)
             """
-            data_to_insert = [(email["to_email"], email["unique_id"], email["sent_at"]) for email in emails]
+            data_to_insert = [
+                (email["to_email"], email["unique_id"], email["sent_at"])
+                for email in emails
+            ]
             self.cursor.executemany(insert_query, data_to_insert)
             self.conn.commit()
             print("Bulk insert of emails successful")
@@ -121,6 +142,7 @@ class Database:
             self.cursor.execute(
                 f"""
                 SELECT * FROM company_info
+                where status = ('GO')
                 order by id
                 limit {limit}
                 offset {offset}
@@ -172,6 +194,39 @@ class Database:
             print("Bulk insert of company details successful")
         except Exception as e:
             print(e)
+
+    def update_company_status(self, email_list):
+        """
+        Updates company status to 'BLACKLISTED' for each email in the list.
+
+        Args:
+            email_list: List of email strings to update
+            db_connection_params: Dictionary containing database connection parameters
+                (host, database, user, password, port)
+        """
+        try:
+
+            for email in email_list:
+                try:
+                    # Create and execute the update query
+                    query = sql.SQL(
+                        """
+                        UPDATE public.company_info 
+                        SET status = ('BLACKLISTED' )
+                        WHERE emails ILIKE %s
+                    """
+                    )
+                    self.cursor.execute(query, [f"%{email}%"])
+                    self.conn.commit()
+
+                except Exception as e:
+                    self.conn.rollback()
+                    logging.error(
+                        f"Failed to update for email {email}. Error: {str(e)}"
+                    )
+
+        except Exception as e:
+            logging.critical(f"Database connection failed. Error: {str(e)}")
 
     def close(self):
         self.cursor.close()
